@@ -1,11 +1,17 @@
 {
 
   "manifest_version": 2,
-  "name": "WhatFont",
+  "name": "A WhatFont",
   "version": "1.3",
 
   "description": "A wrapper for Chengyhin Liu's WhatFont tool",
   "homepage_url": "https://github.com/chengyin/WhatFont-Bookmarklet",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "a_whatfont@example.com",
+      "strict_min_version": "58.0"
+    }
+  },
   "icons": {
     "48": "icons/whatfont-48.png",
     "96": "icons/whatfont-96.png"
@@ -21,7 +27,7 @@
 
   "browser_action": {
     "browser_style": true,
-    "default_title": "WhatFont",
+    "default_title": "A WhatFont",
     "default_icon": {
       "32": "icons/button32.png",
       "16": "icons/button16.png"
