@@ -87,12 +87,13 @@ function _whatFont() {
     };
 
     TypeInfo.roundFloatWithPxUnit = function(original) {
-        var number = Math.round(parseFloat(original));
+        var number = parseFloat(original);
 
         if (isNaN(number)) {
             return '(unknown)';
         } else {
-            return Math.round(parseFloat(original)) + 'px';
+            // Limit to 5 decimal places, but remove trailing zeros
+            return parseFloat(number.toFixed(5)) + 'px';
         }
     }
 
@@ -114,6 +115,7 @@ function _whatFont() {
             this.size = TypeInfo.roundFloatWithPxUnit(this.element.css('font-size'));
             this.lineHeight = TypeInfo.roundFloatWithPxUnit(this.element.css('line-height'));
             this.color = this.element.css('color');
+            this.variableAxes = this.detectVariableAxes();
         },
 
         getFullCSS: function() {
@@ -126,6 +128,28 @@ function _whatFont() {
             }
 
             return css;
+        },
+
+        detectVariableAxes: function() {
+            var axes = {};
+            var computedStyle = window.getComputedStyle(this.element[0]);
+
+            // Only check font-variation-settings - show exactly what's explicitly specified
+            var fontVariationSettings = computedStyle.getPropertyValue('font-variation-settings');
+            if (fontVariationSettings && fontVariationSettings !== 'normal') {
+                // Parse font-variation-settings: "wght" 400, "wdth" 100
+                var matches = fontVariationSettings.match(/"([^"]+)"\s+([^\s,]+)/g);
+                if (matches) {
+                    for (var i = 0; i < matches.length; i++) {
+                        var match = matches[i].match(/"([^"]+)"\s+([^\s,]+)/);
+                        if (match) {
+                            axes[match[1]] = parseFloat(match[2]);
+                        }
+                    }
+                }
+            }
+
+            return axes;
         },
 
         getVariant: function() {
@@ -507,6 +531,14 @@ function _whatFont() {
 
                 '<li>' + '<div class="size_line_height clearfix">' + '<dl class="size section">' + '<dt class="panel_label">Font Size</dt>' + '<dd class="panel_value"></dd>' + '</dl>' + '<dl class="line_height">' + '<dt class="panel_label">Line Height</dt>' + '<dd class="panel_value"></dd>' + '</dl>' + '</div>' + '</li>' +
 
+                '<li class="variable_axes_section" style="display:none;">' + 
+                '<div class="variable_axes_container">' +
+                '<div class="standard_axes_row clearfix wght_wdth_row" style="display:none;">' + '<dl class="wght_axis">' + '<dt class="panel_label">Weight (wght)</dt>' + '<dd class="panel_value wght_value"></dd>' + '</dl>' + '<dl class="wdth_axis">' + '<dt class="panel_label">Width (wdth)</dt>' + '<dd class="panel_value wdth_value"></dd>' + '</dl>' + '</div>' + 
+                '<div class="standard_axes_row clearfix opsz_slnt_row" style="display:none;">' + '<dl class="opsz_axis">' + '<dt class="panel_label">Optical Size (opsz)</dt>' + '<dd class="panel_value opsz_value"></dd>' + '</dl>' + '<dl class="slnt_axis">' + '<dt class="panel_label">Slant (slnt)</dt>' + '<dd class="panel_value slnt_value"></dd>' + '</dl>' + '</div>' + 
+                '<div class="custom_axes_row" style="display:none;">' + '<hr class="axes_separator">' + '<div class="panel_value custom_axes_value"></div>' + '</div>' + 
+                '</div>' +
+                '</li>' +
+
                 '<li class="panel_no_border_bottom">' + '<dl class="type_info clearfix">' + '<dt class="panel_label"></dt>' + '<dd class="type_preview">' + "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz" + '</dd>' + '</dl>' +
 
                 '<div class="font_services panel_label" style="display:none;">' + 'Font Served by ' + '</div>' + '</li>' + '</ul>' +
@@ -627,6 +659,81 @@ function _whatFont() {
             return newPanel;
         },
 
+        variableAxes: function(typeInfo, newPanel) {
+            var axes = typeInfo.variableAxes;
+            var axesSection = $(newPanel).find(".variable_axes_section");
+            var wghtWdthRow = $(newPanel).find(".wght_wdth_row");
+            var opszSlntRow = $(newPanel).find(".opsz_slnt_row");
+            var customRow = $(newPanel).find(".custom_axes_row");
+            
+            if (!axes || Object.keys(axes).length === 0) {
+                axesSection.hide();
+                return newPanel;
+            }
+
+            var hasAnyAxes = false;
+
+            // Standard axes - first row (wght, wdth)
+            var hasWghtWdth = false;
+            if (axes.hasOwnProperty('wght')) {
+                $(newPanel).find(".wght_value").text(axes.wght);
+                hasWghtWdth = true;
+            }
+            if (axes.hasOwnProperty('wdth')) {
+                $(newPanel).find(".wdth_value").text(axes.wdth);
+                hasWghtWdth = true;
+            }
+            if (hasWghtWdth) {
+                wghtWdthRow.show();
+                hasAnyAxes = true;
+            } else {
+                wghtWdthRow.hide();
+            }
+
+            // Standard axes - second row (opsz, slnt)
+            var hasOpszSlnt = false;
+            if (axes.hasOwnProperty('opsz')) {
+                $(newPanel).find(".opsz_value").text(axes.opsz);
+                hasOpszSlnt = true;
+            }
+            if (axes.hasOwnProperty('slnt')) {
+                $(newPanel).find(".slnt_value").text(axes.slnt);
+                hasOpszSlnt = true;
+            }
+            if (hasOpszSlnt) {
+                opszSlntRow.show();
+                hasAnyAxes = true;
+            } else {
+                opszSlntRow.hide();
+            }
+
+            // Custom axes (everything else)
+            var standardAxes = ['wght', 'wdth', 'opsz', 'slnt'];
+            var customAxesText = [];
+            for (var axis in axes) {
+                if (axes.hasOwnProperty(axis) && standardAxes.indexOf(axis) === -1) {
+                    customAxesText.push(axis + ': ' + axes[axis]);
+                }
+            }
+
+            if (customAxesText.length > 0) {
+                $(newPanel).find(".custom_axes_value").text(customAxesText.join(', '));
+                customRow.show();
+                hasAnyAxes = true;
+            } else {
+                customRow.hide();
+            }
+
+            // Show/hide the entire axes section
+            if (hasAnyAxes) {
+                axesSection.show();
+            } else {
+                axesSection.hide();
+            }
+
+            return newPanel;
+        },
+
         color: function(typeInfo, newPanel) {
             var rgb_color = typeInfo.color,
                 sample = $(newPanel).find(".color_info_sample"),
@@ -679,7 +786,7 @@ function _whatFont() {
         },
 
         panelContent: function(typeInfo, newPanel) {
-            $(['typePreview', 'fontService', 'fontFam', 'sizeLineHeight', 'color', 'tweet']).each(function(i, prop) {
+            $(['typePreview', 'fontService', 'fontFam', 'sizeLineHeight', 'variableAxes', 'color', 'tweet']).each(function(i, prop) {
                 panel[prop](typeInfo, newPanel);
             });
         },

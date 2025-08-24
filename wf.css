@@ -304,6 +304,45 @@
 	zoom: 1;
 }
 
+.__whatfont_panel_content .__whatfont_wght_axis {
+	float: left;
+	width: 48.6%;
+	zoom: 1;
+}
+
+.__whatfont_panel_content .__whatfont_wdth_axis {
+	margin-left: 50%;
+	width: 48.6%;
+	zoom: 1;
+}
+
+.__whatfont_panel_content .__whatfont_opsz_axis {
+	float: left;
+	width: 48.6%;
+	zoom: 1;
+}
+
+.__whatfont_panel_content .__whatfont_slnt_axis {
+	margin-left: 50%;
+	width: 48.6%;
+	zoom: 1;
+}
+
+.__whatfont_variable_axes_container {
+	border: 1px solid #4a4a4a;
+	border-radius: 3px;
+	margin: 5px 6px;
+	padding: 8px;
+	background: rgba(0, 0, 0, 0.2);
+}
+
+.__whatfont_axes_separator {
+	border: 0;
+	border-top: 1px solid #666;
+	margin: 6px 0;
+	height: 0;
+}
+
 .__whatfont_highlighted {
   cursor: default !important;
 }
